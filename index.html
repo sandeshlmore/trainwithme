@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="GYMRAT — train hard, train smart, form first." />
+  <title>GYMRAT | Train Smart</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="hero">
+    <nav><a class="brand" href="#top">GYM<span>RAT</span></a><span class="nav-note">FORM FIRST / ALWAYS</span><a class="nav-link" href="#rules">THE RULES</a></nav>
+    <div class="hero-content" id="top">
+      <p class="eyebrow">BUILT FOR THE LONG GAME</p>
+      <h1>BUILD YOUR<br><em>BEST VERSION.</em></h1>
+      <p class="hero-copy">A no-noise training system built on progressive overload, proper form, controlled reps, recovery, and consistency.</p>
+      <a class="button primary" href="#program">START WORKOUT <span>↓</span></a>
+    </div>
+    <div class="hero-stats"><div><b>6</b><span>TRAINING DAYS</span></div><div><b>30</b><span>EXERCISES</span></div><div><b>01</b><span>FOCUS: FORM</span></div></div>
+  </header>
+
+  <main id="program">
+    <section class="section-heading"><p class="eyebrow">THE WEEKLY SYSTEM</p><h2>YOUR <em>PROGRAM.</em></h2><p>Push / Pull / Legs, twice through. Pick a day or use keys 1–7.</p></section>
+    <div class="day-nav" id="dayNav"></div>
+    <section id="workout" aria-live="polite"></section>
+    <section class="info-grid">
+      <details class="info-card" open><summary><span>01</span> WARM UP <i>+</i></summary><div><p>Prepare to move well before you load up.</p><ol><li>5–10 min light cardio</li><li>Dynamic movement for the joints you will use</li><li>2–4 progressive warm-up sets on your first compound lift</li></ol><small>Warm-up sets prepare you. They are not working sets.</small></div></details>
+      <article class="info-card progress-card"><span>02</span><h3>HOW TO PROGRESS</h3><p>Hit the top of the rep range with clean form on every set? Add a small amount of weight next session. If form breaks down, own the weight first.</p></article>
+      <article class="info-card recovery"><span>03</span><h3>RECOVERY MATTERS</h3><ul><li>Sleep 7–9 hours</li><li>Hydrate and eat for your goal</li><li>Respect rest days</li><li>Never train through sharp pain</li></ul></article>
+    </section>
+    <section class="rules" id="rules"><p class="eyebrow">NO EXCUSES. JUST STANDARDS.</p><h2>GYMRAT <em>RULES.</em></h2><div id="rulesList"></div></section>
+  </main>
+
+  <aside class="timer" aria-label="Rest timer"><div class="timer-head"><span>REST TIMER</span><button id="timerMin" aria-label="Minimize timer">−</button></div><strong id="time">01:30</strong><div class="presets" id="presets"><button data-time="60">60</button><button class="selected" data-time="90">90</button><button data-time="120">120</button><button data-time="180">180</button></div><div class="timer-actions"><button class="button small primary" id="startTimer">START</button><button class="button small" id="pauseTimer">PAUSE</button><button class="button small" id="resetTimer">RESET</button></div></aside>
+  <footer>GYMRAT <span>—</span> TRAIN HARD. TRAIN SMART. FORM FIRST.</footer>
+  <script src="script.js"></script>
+</body>
+</html>
