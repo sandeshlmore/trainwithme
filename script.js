@@ -1,3 +1,21 @@
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js';
+import { getAuth, onAuthStateChanged, signInAnonymously } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js';
+import { getFirestore, doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js';
+
+// This browser configuration is public by design. Database access is protected
+// by Firebase Authentication and Firestore security rules, not by hiding it.
+const firebaseConfig = {
+  apiKey: 'AIzaSyDpD95OzFcRQKpyEM5rwkN2JX2APF9aD8s',
+  authDomain: 'trainwithme-d772e.firebaseapp.com',
+  projectId: 'trainwithme-d772e',
+  storageBucket: 'trainwithme-d772e.firebasestorage.app',
+  messagingSenderId: '875359704133',
+  appId: '1:875359704133:web:1b8502c285e0d096c57f2c',
+};
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
 const workouts = [
   {day:'DAY 1',name:'PUSH',focus:'CHEST · SHOULDERS · TRICEPS',ex:[['Barbell Bench Press','Chest · Triceps'],['Incline Dumbbell Press','Chest · Shoulders'],['Overhead Shoulder Press','Shoulders · Triceps'],['Lateral Raises','Shoulders'],['Triceps Pushdown','Arms · Triceps']]},
   {day:'DAY 2',name:'PULL',focus:'BACK · REAR DELTS · BICEPS',ex:[['Lat Pulldown','Back · Arms'],['Seated Cable Row','Back · Arms'],['Chest Supported Row','Back'],['Face Pull','Shoulders · Back'],['Dumbbell Curl','Arms · Biceps']]},
@@ -8,10 +26,13 @@ const workouts = [
 ];
 const rules=['FORM > WEIGHT','FULL CONTROLLED REPS',"DON'T EGO LIFT",'PROGRESSIVE OVERLOAD','TRACK YOUR WORKOUTS','RECOVER PROPERLY','CONSISTENCY WINS'];
 let active=0, query='', filter='ALL';
-const saved=JSON.parse(localStorage.getItem('gymrat-data')||'{}');
+const saved=JSON.parse(localStorage.getItem('train-right-data')||localStorage.getItem('gymrat-data')||'{}');
+let userId=null,cloudReady=false,syncTimer;
 const key=(day,i)=>`${day}-${i}`;
 const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-function save(){localStorage.setItem('gymrat-data',JSON.stringify(saved))}
+function save(){localStorage.setItem('train-right-data',JSON.stringify(saved));if(cloudReady){clearTimeout(syncTimer);syncTimer=setTimeout(syncToCloud,350)}}
+async function syncToCloud(){if(!cloudReady||!userId)return;try{await setDoc(doc(db,'users',userId,'workouts','current'),{exercises:saved,updatedAt:Date.now()})}catch(error){console.error('Workout sync failed:',error)}}
+async function startCloudSync(uid){userId=uid;const workoutRef=doc(db,'users',uid,'workouts','current');try{const snapshot=await getDoc(workoutRef);if(snapshot.exists()&&snapshot.data().exercises){Object.assign(saved,snapshot.data().exercises);localStorage.setItem('train-right-data',JSON.stringify(saved))}else{await setDoc(workoutRef,{exercises:saved,updatedAt:Date.now()})}cloudReady=true;render()}catch(error){console.error('Workout load failed:',error)}}
 function demo(){return `<svg viewBox="0 0 160 170" aria-label="Animated exercise demonstration"><g class="person"><circle cx="80" cy="27" r="11"/><path d="M80 38v54M80 54l-31 24M80 54l31 24M80 92l-23 48M80 92l23 48"/></g><g class="moving weight"><path d="M33 69h94"/><path d="M40 60v18M120 60v18"/></g><path d="M12 152h136" stroke="#42503d"/></svg>`}
 function form(ex){return `<div class="guide" id="guide-${ex.id}"><div class="demo">${demo()}</div><div class="guide-content"><div class="guide-box"><h4>STARTING POSITION</h4><p>Set your feet and brace your core. Keep joints stacked and a neutral spine before the first rep.</p></div><div class="guide-box"><h4>MOVEMENT</h4><p>Move through a controlled, pain-free range. Let the target muscle drive the rep—never momentum.</p></div><div class="guide-box"><h4>BREATHING & TEMPO</h4><p>Inhale and brace on the way down; exhale through the effort. 2 sec down → pause → 1 sec up.</p></div><div class="guide-box"><h4>KEY FORM CUES</h4><ul><li>Control every rep</li><li>Keep your core braced</li><li>Use full comfortable range</li></ul></div><div class="guide-box mistakes"><h4>COMMON MISTAKES</h4><ul><li>Ego lifting or rushing reps</li><li>Losing neutral spine</li><li>Using momentum or half reps</li></ul></div></div></div>`}
 function tracker(ex){const sets=ex.sets||[{w:'',r:''},{w:'',r:''},{w:'',r:''},{w:'',r:''}];const last=ex.last?`Last time: ${ex.last}`:'Complete a logged workout to save a benchmark.';const suggestion=ex.last?'Suggestion: consider a small increase next session only if every rep stays clean.':'Form first—use a load you can fully control.';return `<div class="tracker"><div class="tracker-title"><span>WORKING SETS</span><span class="last">${last}</span></div><div class="sets">${sets.map((s,i)=>`<div class="set-row"><label>SET ${i+1}</label><input data-field="w" data-set="${i}" inputmode="decimal" placeholder="Weight kg" value="${esc(s.w)}"><input data-field="r" data-set="${i}" inputmode="numeric" placeholder="Reps" value="${esc(s.r)}"><button class="remove-set" data-remove="${i}" aria-label="Remove set">×</button></div>`).join('')}</div><button class="add-set">+ ADD SET</button><div class="last">${suggestion}</div></div>`}
@@ -23,3 +44,8 @@ document.addEventListener('change',e=>{const cardEl=e.target.closest('.exercise'
 document.addEventListener('input',e=>{if(e.target.id==='search'){query=e.target.value;applySearch()}});document.addEventListener('keydown',e=>{if(!/^[1-7]$/.test(e.key)||['INPUT','TEXTAREA'].includes(document.activeElement.tagName))return;active=+e.key-1;render();document.querySelector('#program').scrollIntoView({behavior:'smooth'})});
 rulesList.innerHTML=rules.map((x,i)=>`<div class="rule"><b>0${i+1}</b><span>${x}</span></div>`).join('');
 let remaining=90,initial=90,interval;const time=document.querySelector('#time'),timer=document.querySelector('.timer');function paint(){time.textContent=remaining?'': 'GO';if(remaining){time.textContent=`${String(Math.floor(remaining/60)).padStart(2,'0')}:${String(remaining%60).padStart(2,'0')}`;timer.classList.remove('go')}else timer.classList.add('go')}document.querySelector('#presets').onclick=e=>{if(!e.target.dataset.time)return;remaining=initial=+e.target.dataset.time;clearInterval(interval);document.querySelectorAll('.presets button').forEach(b=>b.classList.toggle('selected',b===e.target));paint()};document.querySelector('#startTimer').onclick=()=>{clearInterval(interval);if(!remaining)remaining=initial;interval=setInterval(()=>{remaining--;paint();if(!remaining)clearInterval(interval)},1000)};document.querySelector('#pauseTimer').onclick=()=>clearInterval(interval);document.querySelector('#resetTimer').onclick=()=>{clearInterval(interval);remaining=initial;paint()};document.querySelector('#timerMin').onclick=()=>timer.classList.toggle('minimized');render();paint();
+
+onAuthStateChanged(auth,user=>{
+  if(user){startCloudSync(user.uid);return}
+  signInAnonymously(auth).catch(error=>console.error('Enable Firebase Anonymous sign-in before using cloud sync:',error));
+});
